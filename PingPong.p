@@ -1,6 +1,7 @@
 event Ping assert 1: machine;
 event Pong assert 1: machine;
 event Msg assert 1: int;
+event OTPSecret assert 1: (machine, int);
 
 event Success;
 event M_Ping;
@@ -16,25 +17,14 @@ machine PING
           pongMachine = payload as machine;
           raise (Success);   	   
         }
-        on Success goto initCommunication;
+        on Success goto SendOTPSecret;
     }
-
-	state initCommunication {
-        entry {
-			announce M_Ping;
-			// generate OTP secret 
-			// var secret: StringType;
-			send pongMachine, Ping, this;
-	    }
-        on Pong goto SendOTPSecret;
-     }
 
     state SendOTPSecret {
         entry {
-			announce M_Ping;
 			// generate OTP secret 
 			// var secret: StringType;
-			send pongMachine, Msg, 3;
+			send pongMachine, OTPSecret, (this, 3);
 			raise (Success);
 	    }
         on Success goto WaitPong;
@@ -52,23 +42,12 @@ machine PONG
 	var pingMachine : machine;
 
     start state Init {
-        on Ping goto initCommunication;
+        on OTPSecret goto WaitOTPSecret;
     }
 
-	state initCommunication {
-		 entry (payload: machine) {
-	        announce M_Pong;
-			pingMachine = payload;
-			send pingMachine, Pong, this;
-			//send pingMachine, Pong, this;
-			//_SEND(pingMachine, Pong, this);
-	    }
-        on Msg goto SendPong;
-	}
-
-    state SendPong {
-	    entry (payload: int) {
-	        announce M_Pong;
+    state WaitOTPSecret {
+	    entry (payload: (machine, int)) {
+	        pingMachine = payload.0;
 			send pingMachine, Pong, this;
 			raise (Success);		 	  
 	    }
@@ -81,7 +60,6 @@ machine PONG
 		}
 	}
 }
-
 
 spec M observes M_Ping, M_Pong {
     start state ExpectPing {
