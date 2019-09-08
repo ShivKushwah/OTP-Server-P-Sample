@@ -22,7 +22,7 @@ machine PING
 			announce M_Ping;
 			// generate OTP secret 
 			// var secret: StringType;
-			_SEND(pongMachine, Ping, this);
+			send pongMachine, Ping, this;
 	    }
         on Pong goto SendOTPSecret;
      }
@@ -32,7 +32,7 @@ machine PING
 			announce M_Ping;
 			// generate OTP secret 
 			// var secret: StringType;
-			_SEND(pongMachine, Ping, this);
+			send pongMachine, Ping, this;
 			raise (Success);
 	    }
         on Success goto WaitPong;
@@ -56,8 +56,10 @@ machine PONG
 	state initCommunication {
 		 entry (payload: machine) {
 	        announce M_Pong;
-			_SEND(payload, Pong, this);
-			_SEND(payload, Pong, this);
+			pingMachine = payload;
+			send pingMachine, Pong, this;
+			//send pingMachine, Pong, this;
+			//_SEND(pingMachine, Pong, this);
 	    }
         on Ping goto SendPong;
 	}
@@ -65,7 +67,7 @@ machine PONG
     state SendPong {
 	    entry (payload: machine) {
 	        announce M_Pong;
-			_SEND(payload, Pong, this);
+			send payload, Pong, this;
 			raise (Success);		 	  
 	    }
         on Success goto End;
