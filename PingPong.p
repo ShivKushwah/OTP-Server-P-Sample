@@ -14,12 +14,24 @@ machine PING
           pongMachine = payload as machine;
           raise (Success);   	   
         }
-        on Success goto SendPing;
+        on Success goto initCommunication;
     }
 
-    state SendPing {
+	state initCommunication {
         entry {
 			announce M_Ping;
+			// generate OTP secret 
+			// var secret: StringType;
+			_SEND(pongMachine, Ping, this);
+	    }
+        on Pong goto SendOTPSecret;
+     }
+
+    state SendOTPSecret {
+        entry {
+			announce M_Ping;
+			// generate OTP secret 
+			// var secret: StringType;
 			_SEND(pongMachine, Ping, this);
 			raise (Success);
 	    }
@@ -35,12 +47,23 @@ machine PING
 
 machine PONG
 {
+	var pingMachine : machine;
+
     start state Init {
-        on Ping goto SendPong;
+        on Ping goto initCommunication;
     }
 
+	state initCommunication {
+		 entry (payload: machine) {
+	        announce M_Pong;
+			_SEND(payload, Pong, this);
+			_SEND(payload, Pong, this);
+	    }
+        on Ping goto SendPong;
+	}
+
     state SendPong {
-	    entry (payload:machine) {
+	    entry (payload: machine) {
 	        announce M_Pong;
 			_SEND(payload, Pong, this);
 			raise (Success);		 	  

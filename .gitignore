@@ -1,0 +1,8 @@
+CMakeCache.txt
+.CMakeLists.txt.swp
+cmake_install.cmake
+Makefile
+CMakeFiles/
+PingPong.c
+PingPong.h
+ping_pong
