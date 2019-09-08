@@ -1,5 +1,7 @@
 event Ping assert 1: machine;
 event Pong assert 1: machine;
+event Msg assert 1: int;
+
 event Success;
 event M_Ping;
 event M_Pong;
@@ -32,7 +34,7 @@ machine PING
 			announce M_Ping;
 			// generate OTP secret 
 			// var secret: StringType;
-			send pongMachine, Ping, this;
+			send pongMachine, Msg, 3;
 			raise (Success);
 	    }
         on Success goto WaitPong;
@@ -61,13 +63,13 @@ machine PONG
 			//send pingMachine, Pong, this;
 			//_SEND(pingMachine, Pong, this);
 	    }
-        on Ping goto SendPong;
+        on Msg goto SendPong;
 	}
 
     state SendPong {
-	    entry (payload: machine) {
+	    entry (payload: int) {
 	        announce M_Pong;
-			send payload, Pong, this;
+			send pingMachine, Pong, this;
 			raise (Success);		 	  
 	    }
         on Success goto End;
