@@ -1,24 +1,17 @@
-event Ping assert 1: machine;
-event Pong assert 1: machine;
-event Msg assert 1: int;
-event OTPSecret assert 1: (machine, int);
+event OTPSecretMsg assert 1: (machine, int);
 event OTPSecretReceived;
 event OTPCode assert 1: int;
 event OTPCodeValidated;
-
-
 event Success;
-event M_Ping;
-event M_Pong;
 
 machine BANK_SERVER 
 {
-    var pongMachine: machine;
+    var clientOtpGenerator: machine;
 
     // This is the entry point.
     start state Init {
         entry (payload:any) {
-          pongMachine = payload as machine;
+          clientOtpGenerator = payload as machine;
           raise (Success);   	   
         }
         on Success goto GenerateOTPSecret;
@@ -28,7 +21,7 @@ machine BANK_SERVER
         entry {
 			// generate OTP secret 
 			// var secret: StringType;
-			send pongMachine, OTPSecret, (this, 3);
+			send clientOtpGenerator, OTPSecretMsg, (this, 3);
 	    }
         on OTPSecretReceived goto WaitOTPCode;
      }
@@ -39,7 +32,7 @@ machine BANK_SERVER
 
 	 state ValidateOTPCode {
         entry (payload: int) {
-          send pongMachine, OTPCodeValidated;
+          send clientOtpGenerator, OTPCodeValidated;
           raise (Success);   	   
         }
 		on Success goto Done;
@@ -50,16 +43,16 @@ machine BANK_SERVER
 
 machine CLIENT_OTP_GENERATOR
 {
-	var pingMachine : machine;
+	var bankServer : machine;
 
     start state Init {
-        on OTPSecret goto WaitOTPSecret;
+        on OTPSecretMsg goto WaitOTPSecret;
     }
 
     state WaitOTPSecret {
 	    entry (payload: (machine, int)) {
-	        pingMachine = payload.0;
-			send pingMachine, OTPSecretReceived;
+	        bankServer = payload.0;
+			send bankServer, OTPSecretReceived;
 			raise (Success);	 	  
 	    }
         on Success goto GenerateOTPCode;
@@ -67,7 +60,7 @@ machine CLIENT_OTP_GENERATOR
 
 	state GenerateOTPCode {
 	    entry {
-			send pingMachine, OTPCode, 7;
+			send bankServer, OTPCode, 7;
 	    }
         on OTPCodeValidated goto End;
     }
@@ -79,13 +72,9 @@ machine CLIENT_OTP_GENERATOR
 	}
 }
 
-spec M observes M_Ping, M_Pong {
-    start state ExpectPing {
-        on M_Ping goto ExpectPong;
-    }
+spec M observes Success {
+    start state initialState {
 
-	state ExpectPong {
-        on M_Pong goto ExpectPing;
     }
 }
 
