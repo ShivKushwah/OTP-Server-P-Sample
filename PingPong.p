@@ -1,8 +1,11 @@
+event Success;
+event Failure;
+
 event OTPSecretMsg assert 1: (machine, int);
 event OTPSecretReceived;
-event OTPCode assert 1: int;
+event OTPCodeMsg assert 1: int;
 event OTPCodeValidated;
-event Success;
+event OTPCodeFailed;
 
 machine BANK_SERVER 
 {
@@ -20,22 +23,30 @@ machine BANK_SERVER
     state GenerateOTPSecret {
         entry {
 			// generate OTP secret 
-			// var secret: StringType;
-			send clientOtpGenerator, OTPSecretMsg, (this, 3);
+			var secret : int;
+			secret = 123456788;
+			send clientOtpGenerator, OTPSecretMsg, (this, secret);
 	    }
         on OTPSecretReceived goto WaitOTPCode;
      }
 
      state WaitOTPCode {
-        on OTPCode goto ValidateOTPCode;
+        on OTPCodeMsg goto ValidateOTPCode;
      }
 
 	 state ValidateOTPCode {
         entry (payload: int) {
-          send clientOtpGenerator, OTPCodeValidated;
-          raise (Success);   	   
+		  // validate OTP code
+		  if (payload == 123456789) {
+			send clientOtpGenerator, OTPCodeValidated;
+          	raise (Success);  
+		  } else  {
+			send clientOtpGenerator, OTPCodeFailed;
+			raise (Failure);
+		  }  
         }
 		on Success goto Done;
+		on Failure goto WaitOTPCode;
      }
 
      state Done {}
@@ -44,14 +55,16 @@ machine BANK_SERVER
 machine CLIENT_OTP_GENERATOR
 {
 	var bankServer : machine;
+	var OTPSecret: int;
 
     start state Init {
-        on OTPSecretMsg goto WaitOTPSecret;
+        on OTPSecretMsg goto HandleOTPSecret;
     }
 
-    state WaitOTPSecret {
+    state HandleOTPSecret {
 	    entry (payload: (machine, int)) {
 	        bankServer = payload.0;
+			OTPSecret = payload.1;
 			send bankServer, OTPSecretReceived;
 			raise (Success);	 	  
 	    }
@@ -60,9 +73,10 @@ machine CLIENT_OTP_GENERATOR
 
 	state GenerateOTPCode {
 	    entry {
-			send bankServer, OTPCode, 7;
+			send bankServer, OTPCodeMsg, OTPSecret + 1;
 	    }
         on OTPCodeValidated goto End;
+		on OTPCodeFailed goto GenerateOTPCode;
     }
 	
 	state End {
