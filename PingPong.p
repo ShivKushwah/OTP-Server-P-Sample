@@ -2,6 +2,10 @@ event Ping assert 1: machine;
 event Pong assert 1: machine;
 event Msg assert 1: int;
 event OTPSecret assert 1: (machine, int);
+event OTPSecretReceived;
+event OTPCode assert 1: int;
+event OTPCodeValidated;
+
 
 event Success;
 event M_Ping;
@@ -17,21 +21,28 @@ machine PING
           pongMachine = payload as machine;
           raise (Success);   	   
         }
-        on Success goto SendOTPSecret;
+        on Success goto GenerateOTPSecret;
     }
 
-    state SendOTPSecret {
+    state GenerateOTPSecret {
         entry {
 			// generate OTP secret 
 			// var secret: StringType;
 			send pongMachine, OTPSecret, (this, 3);
-			raise (Success);
 	    }
-        on Success goto WaitPong;
+        on OTPSecretReceived goto WaitOTPCode;
      }
 
-     state WaitPong {
-        on Pong goto Done;
+     state WaitOTPCode {
+        on OTPCode goto ValidateOTPCode;
+     }
+
+	 state ValidateOTPCode {
+        entry (payload: int) {
+          send pongMachine, OTPCodeValidated;
+          raise (Success);   	   
+        }
+		on Success goto Done;
      }
 
      state Done {}
@@ -48,10 +59,17 @@ machine PONG
     state WaitOTPSecret {
 	    entry (payload: (machine, int)) {
 	        pingMachine = payload.0;
-			send pingMachine, Pong, this;
-			raise (Success);		 	  
+			send pingMachine, OTPSecretReceived;
+			raise (Success);	 	  
 	    }
-        on Success goto End;
+        on Success goto GenerateOTPCode;
+    }
+
+	state GenerateOTPCode {
+	    entry {
+			send pingMachine, OTPCode, 7;
+	    }
+        on OTPCodeValidated goto End;
     }
 	
 	state End {
