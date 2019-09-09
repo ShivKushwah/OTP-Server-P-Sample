@@ -11,7 +11,7 @@ event Success;
 event M_Ping;
 event M_Pong;
 
-machine PING 
+machine BANK_SERVER 
 {
     var pongMachine: machine;
 
@@ -48,7 +48,7 @@ machine PING
      state Done {}
 }
 
-machine PONG
+machine CLIENT_OTP_GENERATOR
 {
 	var pingMachine : machine;
 
@@ -93,11 +93,11 @@ fun _CREATEMACHINE(cner: machine, typeOfMachine: int, param : any, newMachine: m
 {
 	if(typeOfMachine == 1)
 	{
-		newMachine = new PING(param);
+		newMachine = new BANK_SERVER(param);
 	}
 	else if(typeOfMachine == 2)
 	{
-		newMachine = new PONG();
+		newMachine = new CLIENT_OTP_GENERATOR();
 	}
 	else
 	{
@@ -106,17 +106,17 @@ fun _CREATEMACHINE(cner: machine, typeOfMachine: int, param : any, newMachine: m
 	return newMachine;
 }
 
-machine GodMachine
+machine IntializerMachine
 {
 	var container : machine;
-    var pongMachine: machine;
+    var clientMachine: machine;
 
     start state Init {
 	    entry {
 			container = _CREATECONTAINER();
-			pongMachine = _CREATEMACHINE(container, 2, null, null as machine);
+			clientMachine = _CREATEMACHINE(container, 2, null, null as machine);
 			container = _CREATECONTAINER();
-			_CREATEMACHINE(container, 1, pongMachine, null as machine);
+			_CREATEMACHINE(container, 1, clientMachine, null as machine); //Create bank server
 	    }
 	}
 }

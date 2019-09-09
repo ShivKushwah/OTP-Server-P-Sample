@@ -96,10 +96,10 @@ int main(int argc, char* argv[])
     process = PrtStartProcess(processGuid, &P_GEND_IMPL_DefaultImpl, ErrorHandler, Log);
     payload = PrtMkNullValue();
     PRT_UINT32 machineId;
-    PRT_BOOLEAN foundMainMachine = PrtLookupMachineByName("GodMachine", &machineId);
+    PRT_BOOLEAN foundMainMachine = PrtLookupMachineByName("IntializerMachine", &machineId);
     if (foundMainMachine == PRT_FALSE)
     {
-        printf("%s\n", "FAILED TO FIND GodMachine");
+        printf("%s\n", "FAILED TO FIND IntializerMachine");
         exit(1);
     }
     PrtMkMachine(process, machineId, 1, &payload);
