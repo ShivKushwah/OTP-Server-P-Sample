@@ -1,4 +1,4 @@
-# OTP Server in P
+# OTP Server in P [DELETE THIS REPO -> OLD]
 
 Commands Needed to Run:
 
